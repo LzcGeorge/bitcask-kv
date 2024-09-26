@@ -2,6 +2,10 @@ package data
 
 import "bitcast-go/fio"
 
+const (
+	DataFileNameSuffix = ".data"
+)
+
 // DataFile 数据文件
 type DataFile struct {
 	FileId      uint32        // 文件id
@@ -24,6 +28,6 @@ func (df *DataFile) Write(buf []byte) error {
 	return nil
 }
 
-func (df *DataFile) ReadLogRecord(offset int64) (*LogRecord, error) {
-	return nil, nil
+func (df *DataFile) ReadLogRecord(offset int64) (*LogRecord, int64, error) {
+	return nil, 0, nil
 }
