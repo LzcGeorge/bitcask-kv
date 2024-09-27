@@ -1,8 +1,8 @@
 package bitcask_go
 
 import (
-	"bitcast-go/data"
-	"bitcast-go/index"
+	"bitcask-go/data"
+	"bitcask-go/index"
 	"errors"
 	"io"
 	"os"

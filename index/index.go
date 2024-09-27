@@ -1,12 +1,12 @@
 package index
 
 import (
-	"bitcast-go/data"
+	"bitcask-go/data"
 	"bytes"
 	"github.com/google/btree"
 )
 
-// Indexer 抽象索引接口
+// Indexer 通用索引接口
 type Indexer interface {
 	Put(key []byte, pos *data.LogRecordPos) bool
 	Get(key []byte) *data.LogRecordPos

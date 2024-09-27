@@ -1,7 +1,7 @@
 package data
 
 import (
-	"bitcast-go/fio"
+	"bitcask-go/fio"
 	"errors"
 	"fmt"
 	"hash/crc32"
