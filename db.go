@@ -123,6 +123,38 @@ func (db *DB) Get(key []byte) ([]byte, error) {
 	return record.Value, nil
 }
 
+func (db *DB) Delete(key []byte) error {
+	if len(key) == 0 {
+		return ErrKeyIsEmpty
+	}
+
+	// 检查数据库中是否存在 key
+	if pos := db.index.Get(key); pos != nil {
+		// 不存在的话，删除一个不存在的键并不会改变数据库的状态。
+		// 相当于直接删除了，直接忽略这次操作即可
+		return nil
+
+		// return ErrKeyNotFound
+	}
+
+	// 当前操作写入数据文件, 标识其是被删除的
+	record := &data.LogRecord{
+		Key:  key,
+		Type: data.LogRecordDeleted,
+	}
+
+	_, err := db.appendLogRecord(record)
+	if err != nil {
+		return err
+	}
+
+	if ok := db.index.Delete(key); !ok {
+		return ErrIndexUpdateFailed
+	}
+
+	return nil
+}
+
 // appendLogRecord 追加写入到当前活跃数据文件中
 func (db *DB) appendLogRecord(record *data.LogRecord) (*data.LogRecordPos, error) {
 	db.lock.Lock()
@@ -257,10 +289,14 @@ func (db *DB) loadRecordsFromDataFile() error {
 				Fid:    fileId,
 				Offset: offset,
 			}
+			var ok bool
 			if record.Type == data.LogRecordNormal {
-				db.index.Put(record.Key, recordPos)
+				ok = db.index.Put(record.Key, recordPos)
 			} else if record.Type == data.LogRecordDeleted {
-				db.index.Delete(record.Key)
+				ok = db.index.Delete(record.Key)
+			}
+			if !ok {
+				return ErrIndexUpdateFailed
 			}
 
 			// 递增 offset，下一次从新的位置开始读

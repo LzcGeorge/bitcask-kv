@@ -8,4 +8,11 @@ type IOManager interface {
 	Write([]byte) (int, error)
 	Sync() error // 持久化数据
 	Close() error
+	// Size 获取文件大小
+	Size() (int64, error)
+}
+
+// NewIOManager 初始化 IOManager，目前仅支持标准 FileIO
+func NewIOManager(fileName string) (IOManager, error) {
+	return NewFileIOManager(fileName)
 }
