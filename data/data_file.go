@@ -104,7 +104,8 @@ func (df *DataFile) ReadLogRecord(offset int64) (*LogRecord, int64, error) {
 	}
 
 	// 校验 crc，crc32.size 是 crc32 校验码的长度
-	if header.crc != getLogRecordCRC(record, headerBuf[crc32.Size:headerSize]) {
+	headerWithoutCRC := headerBuf[crc32.Size:headerSize]
+	if header.crc != GetLogRecordCRC(record, headerWithoutCRC) {
 		return nil, 0, ErrInvalidCRC
 	}
 

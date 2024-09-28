@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/binary"
+	"fmt"
 	"hash/crc32"
 )
 
@@ -52,20 +53,21 @@ func EncodeLogRecord(record *LogRecord) ([]byte, int64) {
 	pos += 1
 
 	// 利用 binary 写入 keySize 和 valueSize
-	KeySize := int64(len(record.Key))
+	keySize := int64(len(record.Key))
 	valueSize := int64(len(record.Value))
-	pos += binary.PutVarint(headerBuf[pos:], KeySize)
+	pos += binary.PutVarint(headerBuf[pos:], keySize)
 	pos += binary.PutVarint(headerBuf[pos:], valueSize)
 
 	// 重新封装 record 转化为 []byte
-	var recordSize = int64(pos) + KeySize + valueSize
+	var recordSize = int64(pos) + keySize + valueSize
 	recordBytes := make([]byte, recordSize)
-	copy(headerBuf[:pos], headerBuf[:pos])               // 将 header 填充到 recordBytes 中
+	copy(recordBytes[:pos], headerBuf[:pos])             // 将 header 填充到 recordBytes 中
 	copy(recordBytes[pos:], record.Key)                  // 将 key 填充到 recordBytes 中
-	copy(recordBytes[pos+int(KeySize):], record.Value)   // 将 value 填充到 recordBytes 中
+	copy(recordBytes[pos+int(keySize):], record.Value)   // 将 value 填充到 recordBytes 中
 	crc := crc32.ChecksumIEEE(recordBytes[4:])           // 计算 crc 检验和
 	binary.LittleEndian.PutUint32(recordBytes[0:4], crc) // 将 crc 填充到 recordBytes 中
 
+	fmt.Printf("headerSize: %d, type: %d, keySize: %d, valueSize: %d, crc: %d\n", pos, record.Type, keySize, valueSize, crc)
 	return recordBytes, recordSize
 }
 
@@ -94,13 +96,14 @@ func DecodeLogRecordHeader(headerBuf []byte) (*LogRecordHeader, int64) {
 	return header, int64(pos)
 }
 
-// getLogRecordCRC 计算 LogRecord 的 crc 校验和
-func getLogRecordCRC(record *LogRecord, header []byte) uint32 {
+// GetLogRecordCRC 计算 LogRecord 的 crc 校验和
+// 传过来的 headerBuf 中是不含 crc 的
+func GetLogRecordCRC(record *LogRecord, headerWithoutCRC []byte) uint32 {
 	if record == nil {
 		return 0
 	}
 
-	crc := crc32.ChecksumIEEE(header)
+	crc := crc32.ChecksumIEEE(headerWithoutCRC[:])
 	crc = crc32.Update(crc, crc32.IEEETable, record.Key)
 	crc = crc32.Update(crc, crc32.IEEETable, record.Value)
 	return crc
