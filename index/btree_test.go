@@ -1,7 +1,7 @@
 package index
 
 import (
-	"bitcast-go/data"
+	"bitcask-go/data"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

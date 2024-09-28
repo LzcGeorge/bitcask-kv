@@ -12,6 +12,8 @@ import (
 	"sync"
 )
 
+const Database_Path = "./Database"
+
 // DB bitcask 存储引擎实例
 type DB struct {
 	options    Options // 用户传过来的配置项，一般不可修改，所以没加指针
@@ -104,7 +106,6 @@ func (db *DB) Get(key []byte) ([]byte, error) {
 	} else {
 		dataFile = db.olderFiles[logRecordPos.Fid]
 	}
-
 	// 数据文件为空
 	if dataFile == nil {
 		return nil, ErrDataFileNotFound
@@ -129,7 +130,7 @@ func (db *DB) Delete(key []byte) error {
 	}
 
 	// 检查数据库中是否存在 key
-	if pos := db.index.Get(key); pos != nil {
+	if pos := db.index.Get(key); pos == nil {
 		// 不存在的话，删除一个不存在的键并不会改变数据库的状态。
 		// 相当于直接删除了，直接忽略这次操作即可
 		return nil
@@ -161,7 +162,7 @@ func (db *DB) appendLogRecord(record *data.LogRecord) (*data.LogRecordPos, error
 	defer db.lock.Unlock()
 
 	// 判断当前活跃数据文件是否存在，不存在则创建一个
-	if db.activeFile != nil {
+	if db.activeFile == nil {
 		if err := db.setActiveDateFile(); err != nil {
 			return nil, err
 		}
