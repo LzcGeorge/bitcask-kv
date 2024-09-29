@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-const Database_Path = "../database"
+const Database_Path = "../Database"
 
 func TestOpenDateFile(t *testing.T) {
 

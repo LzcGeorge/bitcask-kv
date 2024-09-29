@@ -16,3 +16,10 @@ const (
 	// ART 自适应基数树索引
 	ART
 )
+
+var DefaultOptions = Options{
+	DirPath:      "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database",
+	DataFileSize: 256 * 1024 * 1024, // 256MB
+	SyncWrites:   false,
+	IndexType:    BTree,
+}
