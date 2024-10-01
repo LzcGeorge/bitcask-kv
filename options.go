@@ -7,6 +7,18 @@ type Options struct {
 	IndexType    IndexerType
 }
 
+// 索引迭代器配置项
+type IteratorOptions struct {
+	// 遍历前缀为 prefix 的 key，默认 为空
+	Prefix  []byte
+	Reverse bool // 是否倒序，默认正向（false）
+}
+
+var DefaultIteratorOptions = IteratorOptions{
+	Prefix:  nil,
+	Reverse: false,
+}
+
 // 索引类型
 type IndexerType = int8
 

@@ -100,30 +100,11 @@ func (db *DB) Get(key []byte) ([]byte, error) {
 		return nil, ErrKeyNotFound
 	}
 
-	var dataFile *data.DataFile
-	if db.activeFile.FileId == logRecordPos.Fid {
-		dataFile = db.activeFile
-	} else {
-		dataFile = db.olderFiles[logRecordPos.Fid]
-	}
-	// 数据文件为空
-	if dataFile == nil {
-		return nil, ErrDataFileNotFound
-	}
-
-	// 根据偏移量读取数据文件
-	record, _, err := dataFile.ReadLogRecord(logRecordPos.Offset)
-	if err != nil {
-		return nil, err
-	}
-
-	if record.Type == data.LogRecordDeleted {
-		return nil, ErrKeyNotFound
-	}
-
-	return record.Value, nil
+	// 从索引地址 取得对应的 value
+	return db.GetValueByRecordPos(logRecordPos)
 }
 
+// Delete 删除数据
 func (db *DB) Delete(key []byte) error {
 	if len(key) == 0 {
 		return ErrKeyIsEmpty
@@ -156,6 +137,78 @@ func (db *DB) Delete(key []byte) error {
 	return nil
 }
 
+// ListKeys 列出所有的 key
+func (db *DB) ListKeys() [][]byte {
+	iter := db.index.Iterator(false)
+	keyListSize := db.index.Size()
+	keys := make([][]byte, keyListSize)
+	var idx int
+	for iter.Rewind(); iter.Valid(); iter.Next() {
+		keys[idx] = iter.Key()
+		idx++
+	}
+	return keys
+}
+
+// Fold ：遍历所有的数据的循环内，执行用户自定义函数，函数返回 false 时终止遍历
+func (db *DB) Fold(foldFunc func(key []byte, value []byte) bool) error {
+	db.lock.RLock()
+	defer db.lock.RUnlock()
+
+	iter := db.index.Iterator(false)
+	for iter.Rewind(); iter.Valid(); iter.Next() {
+		key := iter.Key()
+		value, err := db.GetValueByRecordPos(iter.Value())
+		if err != nil {
+			return err
+		}
+
+		// 执行用户指定的函数，如果返回 false 则终止遍历
+		if !foldFunc(key, value) {
+			break
+		}
+	}
+	return nil
+}
+
+// Sync 持久化数据文件
+func (db *DB) Sync() error {
+	if db.activeFile == nil {
+		return nil
+	}
+	db.lock.Lock()
+	defer db.lock.Unlock()
+
+	// 只需要持久化当前活跃文件即可，旧的数据文件在被扔到 map 之前，就已经持久化了！
+	// 具体见 db.go 中 appendLogRecord 方法
+	return db.activeFile.Sync()
+}
+
+// Close 关闭数据库
+func (db *DB) Close() error {
+	if db.activeFile == nil {
+		return nil
+	}
+
+	// 写锁
+	db.lock.Lock()
+	defer db.lock.Unlock()
+
+	// 关闭当前活跃文件
+	if err := db.activeFile.Close(); err != nil {
+		return err
+	}
+
+	// 关闭旧的数据文件
+	for _, dataFile := range db.olderFiles {
+		if err := dataFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // appendLogRecord 追加写入到当前活跃数据文件中
 func (db *DB) appendLogRecord(record *data.LogRecord) (*data.LogRecordPos, error) {
 	db.lock.Lock()
@@ -173,7 +226,7 @@ func (db *DB) appendLogRecord(record *data.LogRecord) (*data.LogRecordPos, error
 
 	// 判断当前活跃文件的写入位置是否超过阈值，超过则创建一个新文件
 	if db.activeFile.WriteOffset+size > db.options.DataFileSize {
-		// 持久化数据文件
+		// 持久化数据文件, 把当前活跃丢到 map 中去
 		if err := db.activeFile.Sync(); err != nil {
 			return nil, err
 		}
@@ -324,4 +377,30 @@ func checkOptions(options Options) error {
 	}
 
 	return nil
+}
+
+// GetValueByRecordPos 根据索引信息，从数据文件中读取数据
+func (db *DB) GetValueByRecordPos(logRecordPos *data.LogRecordPos) ([]byte, error) {
+	var dataFile *data.DataFile
+	if db.activeFile.FileId == logRecordPos.Fid {
+		dataFile = db.activeFile
+	} else {
+		dataFile = db.olderFiles[logRecordPos.Fid]
+	}
+	// 数据文件为空
+	if dataFile == nil {
+		return nil, ErrDataFileNotFound
+	}
+
+	// 根据偏移量读取数据文件
+	record, _, err := dataFile.ReadLogRecord(logRecordPos.Offset)
+	if err != nil {
+		return nil, err
+	}
+
+	if record.Type == data.LogRecordDeleted {
+		return nil, ErrKeyNotFound
+	}
+
+	return record.Value, nil
 }

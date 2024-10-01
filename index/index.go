@@ -12,6 +12,8 @@ type Indexer interface {
 	Get(key []byte) *data.LogRecordPos
 	Delete(key []byte) bool
 	Iterator(reverse bool) Iterator
+	// Size 索引中存在的所有 键值对的数量
+	Size() int
 }
 
 type IndexType = int8

@@ -2,6 +2,7 @@ package bitcask_go
 
 import (
 	"bitcask-go/utils"
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -10,7 +11,7 @@ import (
 func destoryDB(db *DB) {
 	if db != nil {
 		if db.activeFile != nil {
-			_ = db.activeFile.Close()
+			_ = db.Close()
 		}
 		err := os.RemoveAll(db.options.DirPath)
 		if err != nil {
@@ -21,7 +22,7 @@ func destoryDB(db *DB) {
 
 func TestOpen(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-test")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-open")
 	opts.DirPath = dir
 	db, err := Open(opts)
 	defer destoryDB(db)
@@ -31,7 +32,7 @@ func TestOpen(t *testing.T) {
 
 func TestDB_Put(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-test")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-put")
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
@@ -72,7 +73,7 @@ func TestDB_Put(t *testing.T) {
 	assert.Equal(t, 2, len(db.olderFiles))
 
 	// 6.重启后再 Put 数据
-	err = db.activeFile.Close()
+	err = db.Close()
 	assert.Nil(t, err)
 
 	// 重启数据库
@@ -89,7 +90,7 @@ func TestDB_Put(t *testing.T) {
 
 func TestDB_Get(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-test")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-get")
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
@@ -145,7 +146,7 @@ func TestDB_Get(t *testing.T) {
 	assert.NotNil(t, val6)
 
 	// 6.重启后，前面写入的数据都能拿到
-	err = db.activeFile.Close()
+	err = db.Close()
 	assert.Nil(t, err)
 
 	db2, err := Open(opts)
@@ -166,7 +167,7 @@ func TestDB_Get(t *testing.T) {
 
 func TestDB_Delete(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-test")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-delete")
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
@@ -205,7 +206,7 @@ func TestDB_Delete(t *testing.T) {
 	assert.Equal(t, newVal4, resVal4)
 
 	// 5.  重启数据库，在进行校验
-	err = db.activeFile.Close()
+	err = db.Close()
 	assert.Nil(t, err)
 
 	db2, err := Open(opts)
@@ -220,7 +221,7 @@ func TestDB_Delete(t *testing.T) {
 
 func TestExample(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-test")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-example")
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
@@ -243,4 +244,103 @@ func TestExample(t *testing.T) {
 	println("覆盖后：", string(deletedRecord.Key), string(deletedRecord.Value), deletedRecord.Type)
 
 	// 结论：删除只是追加一条日志记录，而并不是改之前的 record.type 为删除类型
+}
+
+func TestDB_ListKeys(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-listKeys")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	// 1. 数据库为空时
+	keys := db.ListKeys()
+	assert.Equal(t, 0, len(keys))
+
+	// 2. 一条数据
+	key1 := utils.GetTestKey(1)
+	err = db.Put(key1, utils.GetRandomValue(1))
+	assert.Nil(t, err)
+	keys = db.ListKeys()
+	assert.Equal(t, 1, len(keys))
+	assert.Equal(t, key1, keys[0])
+
+	// 3. 多条数据
+	key2 := utils.GetTestKey(2)
+	err = db.Put(key2, utils.GetRandomValue(2))
+	key3 := utils.GetTestKey(3)
+	err = db.Put(key3, utils.GetRandomValue(3))
+	assert.Nil(t, err)
+	keys = db.ListKeys()
+	assert.Equal(t, 3, len(keys))
+	for _, key := range keys {
+		assert.NotNil(t, key)
+	}
+}
+
+func TestDB_Fold(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-fold")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	key1 := utils.GetTestKey(1)
+	err = db.Put(key1, utils.GetRandomValue(1))
+	assert.Nil(t, err)
+	key2 := utils.GetTestKey(2)
+	err = db.Put(key2, utils.GetRandomValue(2))
+	key3 := utils.GetTestKey(3)
+	err = db.Put(key3, utils.GetRandomValue(3))
+	assert.Nil(t, err)
+
+	err = db.Fold(func(key []byte, value []byte) bool {
+		assert.NotNil(t, key)
+		assert.NotNil(t, value)
+		if bytes.Compare(key, utils.GetTestKey(2)) == 0 {
+			return false
+		}
+		return true
+	})
+}
+
+func TestDB_Close(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-close")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	// destoryDB 中会调用 Close() 方法
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	key1 := utils.GetTestKey(1)
+	err = db.Put(key1, utils.GetRandomValue(1))
+	assert.Nil(t, err)
+
+}
+
+func TestDB_Sync(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-sync")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	key1 := utils.GetTestKey(1)
+	err = db.Put(key1, utils.GetRandomValue(1))
+	assert.Nil(t, err)
+
+	err = db.Sync()
+	assert.Nil(t, err)
 }
