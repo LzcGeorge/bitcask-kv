@@ -52,3 +52,53 @@ func TestBtree_Delete(t *testing.T) {
 	res4 := btree.Delete([]byte("asd"))
 	assert.True(t, res4)
 }
+
+func TestBtree_Iterator(t *testing.T) {
+	btree := NewBtree()
+
+	// 1. btree 为空的情况
+	iter1 := btree.Iterator(false)
+	assert.Equal(t, false, iter1.Valid())
+
+	// 2. btree 中有一条数据的情况
+	res1 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 1, Offset: 11})
+	assert.True(t, res1)
+	iter2 := btree.Iterator(false)
+	assert.Equal(t, true, iter2.Valid())
+	assert.EqualValues(t, []byte("aa"), iter2.Key())
+	assert.NotNil(t, iter2.Value)
+	iter2.Next()
+	assert.Equal(t, false, iter2.Valid())
+
+	// 3. btree 中有多条数据的情况, 且包含重复 key
+	btree.Put([]byte("bb"), &data.LogRecordPos{Fid: 2, Offset: 22})
+	btree.Put([]byte("cc"), &data.LogRecordPos{Fid: 3, Offset: 33})
+	btree.Put([]byte("cc"), &data.LogRecordPos{Fid: 4, Offset: 44})
+	iter3 := btree.Iterator(false)
+	for iter3.Rewind(); iter3.Valid(); iter3.Next() {
+		assert.Equal(t, true, iter3.Valid())
+		assert.NotNil(t, iter3.Key())
+
+	}
+
+	iter3 = btree.Iterator(true)
+	for iter3.Rewind(); iter3.Valid(); iter3.Next() {
+		assert.Equal(t, true, iter3.Valid())
+		assert.NotNil(t, iter3.Key())
+	}
+
+	// 4. 测试 seek
+	iter4 := btree.Iterator(false)
+	iter4.Seek([]byte("bc"))
+	assert.Equal(t, true, iter4.Valid())
+	assert.EqualValues(t, []byte("cc"), iter4.Key())
+	assert.Equal(t, &data.LogRecordPos{4, 44}, iter4.Value())
+
+	// 5. 测试反向 seek
+	iter5 := btree.Iterator(true)
+	iter5.Seek([]byte("cb"))
+	assert.Equal(t, true, iter5.Valid())
+	assert.EqualValues(t, []byte("bb"), iter5.Key())
+	assert.Equal(t, &data.LogRecordPos{2, 22}, iter5.Value())
+
+}

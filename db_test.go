@@ -224,7 +224,7 @@ func TestExample(t *testing.T) {
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
-	//defer destoryDB(db)
+	defer destoryDB(db)
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
 
