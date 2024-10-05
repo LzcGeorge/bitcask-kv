@@ -5,14 +5,13 @@ import (
 	"testing"
 )
 
-const Database_Path = "../Database"
+const Database_Path = "../Database/datafileTest"
 
 func TestOpenDateFile(t *testing.T) {
 
 	file, err := OpenDateFile(Database_Path, 2)
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
-
 	file2, err := OpenDateFile(Database_Path, 22)
 	assert.Nil(t, err)
 	assert.NotNil(t, file2)

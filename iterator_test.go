@@ -98,7 +98,7 @@ func TestIterator_Multi_Value(t *testing.T) {
 	iteratorOpts.Reverse = true
 	iter2 := db.NewIterator(iteratorOpts)
 	for iter2.Seek([]byte("c")); iter2.Valid(); iter2.Next() {
-		t.Log("key = ", string(iter2.Key()))
+		// t.Log("key = ", string(iter2.Key()))
 		assert.NotNil(t, iter2.Key())
 	}
 

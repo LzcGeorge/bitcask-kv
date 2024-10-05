@@ -60,7 +60,7 @@ func TestFileIO_Read(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 5, n)
 	assert.Equal(t, "key_a", string(b))
-	t.Log(string(b), n)
+	//t.Log(string(b), n)
 
 	b2 := make([]byte, 5)
 	n, err = fio.Read(b2, 5)

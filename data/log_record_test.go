@@ -15,7 +15,7 @@ func Test_EncodeLogRecord(t *testing.T) {
 	}
 
 	recordBytes1, n1 := EncodeLogRecord(record1)
-	t.Log(recordBytes1, n1)
+	// t.Log(recordBytes1, n1)
 	assert.NotNil(t, recordBytes1)
 	assert.Greater(t, n1, int64(5))
 
@@ -25,7 +25,7 @@ func Test_EncodeLogRecord(t *testing.T) {
 		Type: LogRecordNormal,
 	}
 	recordBytes2, n2 := EncodeLogRecord(record2)
-	t.Log(recordBytes2, n2)
+	// t.Log(recordBytes2, n2)
 	assert.NotNil(t, recordBytes2)
 	assert.Greater(t, n2, int64(5))
 
@@ -36,7 +36,7 @@ func Test_EncodeLogRecord(t *testing.T) {
 		Type:  LogRecordDeleted,
 	}
 	recordBytes3, n3 := EncodeLogRecord(record3)
-	t.Log(recordBytes3, n3)
+	// t.Log(recordBytes3, n3)
 	assert.NotNil(t, recordBytes3)
 	assert.Greater(t, n3, int64(5))
 }
@@ -46,8 +46,8 @@ func Test_DecodeLogRecordHeader(t *testing.T) {
 	// headerSize: 7, type: 0, keySize: 3, valueSize: 5, crc: 1354786746
 	headerBuf := [](byte){186, 103, 192, 80, 0, 6, 10}
 	header1, headerSize1 := DecodeLogRecordHeader(headerBuf)
-	t.Log(header1.crc, header1.recordType, header1.keySize, header1.valueSize)
-	t.Log("headerSize1: ", headerSize1)
+	// t.Log(header1.crc, header1.recordType, header1.keySize, header1.valueSize)
+	// t.Log("headerSize1: ", headerSize1)
 	assert.NotNil(t, header1)
 	assert.Greater(t, headerSize1, int64(5))
 	assert.Equal(t, int64(7), headerSize1)
@@ -60,8 +60,8 @@ func Test_DecodeLogRecordHeader(t *testing.T) {
 	// headerSize: 7, type: 0, keySize: 10, valueSize: 0, crc: 407273546
 	headerBuf2 := [](byte){74, 128, 70, 24, 0, 20, 0}
 	header2, headerSize2 := DecodeLogRecordHeader(headerBuf2)
-	t.Log(header2.crc, header2.recordType, header2.keySize, header2.valueSize)
-	t.Log("headerSize2: ", headerSize2)
+	// t.Log(header2.crc, header2.recordType, header2.keySize, header2.valueSize)
+	// t.Log("headerSize2: ", headerSize2)
 	assert.NotNil(t, header2)
 	assert.Greater(t, headerSize2, int64(5))
 	assert.Equal(t, int64(7), headerSize2)
@@ -74,8 +74,8 @@ func Test_DecodeLogRecordHeader(t *testing.T) {
 	// headerSize: 7, type: 1, keySize: 10, valueSize: 9, crc: 667747257
 	headerBuf3 := []byte{185, 3, 205, 39, 1, 20, 18}
 	header3, headerSize3 := DecodeLogRecordHeader(headerBuf3)
-	t.Log(header3.crc, header3.recordType, header3.keySize, header3.valueSize)
-	t.Log("headerSize3: ", headerSize3)
+	// t.Log(header3.crc, header3.recordType, header3.keySize, header3.valueSize)
+	// t.Log("headerSize3: ", headerSize3)
 	assert.NotNil(t, header3)
 	assert.Greater(t, headerSize3, int64(5))
 	assert.Equal(t, int64(7), headerSize3)

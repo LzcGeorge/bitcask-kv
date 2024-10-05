@@ -236,7 +236,7 @@ func TestExample(t *testing.T) {
 	assert.Nil(t, err)
 	record, recordSize, err := db.activeFile.ReadLogRecord(0)
 	println("覆盖前：", string(record.Key), string(record.Value), record.Type)
-	//err = db.Put(key1, utils.GetRandomValue(24))
+	// err = db.Put(key1, utils.GetRandomValue(24))
 	// assert.Nil(t, err)
 	err = db.Delete(key1)
 	assert.Nil(t, err)
