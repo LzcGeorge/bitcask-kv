@@ -109,6 +109,12 @@ func (df *DataFile) ReadLogRecord(offset int64) (*LogRecord, int64, error) {
 		return nil, 0, ErrInvalidCRC
 	}
 
+	// 测试是否已经 key 中是否含有 seqNo
+	// seqNo, n := binary.Uvarint(record.Key)
+	// realKey := record.Key[n:]
+	// println(seqNo, string(realKey))
+	// fmt.Printf("key: %v,recordType: %v,recordSize: %v\n", string(record.Key), record.Type, recordSize)
+
 	return record, recordSize, nil
 }
 

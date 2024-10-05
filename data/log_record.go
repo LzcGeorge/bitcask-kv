@@ -10,6 +10,7 @@ type LogRecordType = byte
 const (
 	LogRecordNormal LogRecordType = iota
 	LogRecordDeleted
+	LogRecordTxnFinished
 )
 
 // 最大日志记录头大小: crc(4) + type(1) + keySize(5) + valueSize(5)
@@ -33,6 +34,12 @@ type LogRecordHeader struct {
 	recordType LogRecordType // LogRecord 的类型
 	keySize    uint32        // key 的长度
 	valueSize  uint32        // value 的长度
+}
+
+// TransactionRecord 事务的记录
+type TransactionRecord struct {
+	Record *LogRecord // key 中含 seqNo，写入到索引中的
+	Pos    *LogRecordPos
 }
 
 // EncodeLogRecord 对 record 进行编码，返回字节数组和长度
