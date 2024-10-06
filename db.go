@@ -23,6 +23,7 @@ type DB struct {
 	olderFiles map[uint32]*data.DataFile // 旧的数据文件，只能用于读
 	index      index.Indexer             // 数据内存索引
 	seqNo      uint64                    // 事务序列号，全局递增，和 key 一起写入索引中（文件中只有 key）
+	isMerging  bool                      // 是否正在合并数据文件
 }
 
 // Open 打开一个 bitcask 数据库
