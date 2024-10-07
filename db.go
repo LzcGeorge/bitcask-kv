@@ -335,7 +335,7 @@ func (db *DB) loadIndexFromDataFile() error {
 	}
 
 	// 查看是否发生过 merge
-	hasMerge, nonMergeFIleId := flase, uint32(0)
+	hasMerge, nonMergeFIleId := false, uint32(0)
 	mergeFinishedFilePath := filepath.Join(db.options.DirPath, data.MergeFinishedFileName)
 	if _, err := os.Stat(mergeFinishedFilePath); err == nil {
 		fid, err := db.getNonMergeFileId(db.options.DirPath)
