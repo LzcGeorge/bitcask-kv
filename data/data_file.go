@@ -14,9 +14,7 @@ var (
 )
 
 const (
-	DataFileNameSuffix    = ".data"
-	HintFileName          = "hint-index"
-	MergeFinishedFileName = "merge-finished"
+	DataFileNameSuffix = ".data"
 )
 
 // DataFile 数据文件
@@ -26,9 +24,11 @@ type DataFile struct {
 	IOManager   fio.IOManager // IO读写管理器
 }
 
-func NewDateFile(filePath string, fileId uint32) (*DataFile, error) {
+// OpenDateFile 打开数据文件
+func OpenDateFile(dirPath string, fileId uint32) (*DataFile, error) {
+	fileName := filepath.Join(dirPath, fmt.Sprintf("%09d", fileId)+DataFileNameSuffix)
 	// 初始化 IOManager 管理器接口
-	ioManager, err := fio.NewIOManager(filePath)
+	ioManager, err := fio.NewIOManager(fileName)
 	if err != nil {
 		return nil, err
 	}
@@ -38,30 +38,6 @@ func NewDateFile(filePath string, fileId uint32) (*DataFile, error) {
 		WriteOffset: 0,
 		IOManager:   ioManager,
 	}, nil
-}
-
-// GetDataFileName 获取数据文件路径名
-func GetDataFileName(dirPath string, fileId uint32) string {
-	filePath := filepath.Join(dirPath, fmt.Sprintf("%09d", fileId)+DataFileNameSuffix)
-	return filePath
-}
-
-// OpenDateFile 打开数据文件
-func OpenDateFile(dirPath string, fileId uint32) (*DataFile, error) {
-	filePath := GetDataFileName(dirPath, fileId)
-	return NewDateFile(filePath, fileId)
-}
-
-// 打开 Hint 索引文件
-func OpenHintFile(dirPath string) (*DataFile, error) {
-	filePath := filepath.Join(dirPath, HintFileName)
-	return NewDateFile(filePath, 0)
-}
-
-// OpenMergeFinishFile 打开 标识merge完成的文件
-func OpenMergeFinishFile(dirPath string) (*DataFile, error) {
-	filePath := filepath.Join(dirPath, MergeFinishedFileName)
-	return NewDateFile(filePath, 0)
 }
 
 // Sync 持久化数据文件
@@ -81,16 +57,6 @@ func (df *DataFile) Write(buf []byte) error {
 
 	df.WriteOffset += int64(n)
 	return nil
-}
-
-// 向 hint 文件写入索引信息
-func (df *DataFile) WriteHintRecord(key []byte, pos *LogRecordPos) error {
-	record := &LogRecord{
-		Key:   key,
-		Value: EncodeLogRecordPos(pos),
-	}
-	logRecord, _ := EncodeLogRecord(record)
-	return df.Write(logRecord)
 }
 
 // ReadLogRecord 根据 offset 从数据文件中读取 LogRecord

@@ -153,7 +153,7 @@ func encodeKeyWithSeqNo(key []byte, seqNo uint64) []byte {
 	return encodeKey
 }
 
-// DecodeKeyWithSeqNo 获取实际的 key 和 事务序列号,返回格式： key, seqNo
+// DecodeKeyWithSeqNo 获取实际的 key 和 事务序列号,编码格式: seqNo + key
 func DecodeKeyWithSeqNo(encodeKey []byte) ([]byte, uint64) {
 	seqNo, n := binary.Uvarint(encodeKey)
 	return encodeKey[n:], seqNo

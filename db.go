@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +23,6 @@ type DB struct {
 	olderFiles map[uint32]*data.DataFile // 旧的数据文件，只能用于读
 	index      index.Indexer             // 数据内存索引
 	seqNo      uint64                    // 事务序列号，全局递增，和 key 一起写入索引中（文件中只有 key）
-	isMerging  bool                      // 是否正在合并数据文件
 }
 
 // Open 打开一个 bitcask 数据库
@@ -49,23 +47,13 @@ func Open(options Options) (*DB, error) {
 		index:      index.NewIndexer(index.IndexType(options.IndexType)),
 	}
 
-	// 从 merge DB 中加载数据文件
-	if err := db.loadMergeFiles(); err != nil {
-		return nil, err
-	}
-
 	// 加载数据文件，保存文件的 id 到 fileIds
 	if err := db.loadDataFiles(); err != nil {
 		return nil, err
 	}
 
-	// 从 hintFile 索引文件中加载索引
-	if err := db.loadIndexFromHintFile(); err != nil {
-		return nil, err
-	}
-
-	// 加载数据文件中的索引: 从 fileIds 中拿到文件
-	if err := db.loadIndexFromDataFile(); err != nil {
+	// 加载数据文件的记录: 从 fileIds 中拿到文件
+	if err := db.loadRecordsFromDataFile(); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -328,21 +316,11 @@ func (db *DB) loadDataFiles() error {
 	return nil
 }
 
-// loadIndexFromDataFile 遍历所有的数据文件，并更新到内存索引中
-func (db *DB) loadIndexFromDataFile() error {
+// 从数据文件中加载索引
+// 遍历文件中的所有记录，并更新到内存索引中
+func (db *DB) loadRecordsFromDataFile() error {
 	if len(db.fileIds) == 0 {
 		return nil
-	}
-
-	// 查看是否发生过 merge
-	hasMerge, nonMergeFIleId := false, uint32(0)
-	mergeFinishedFilePath := filepath.Join(db.options.DirPath, data.MergeFinishedFileName)
-	if _, err := os.Stat(mergeFinishedFilePath); err == nil {
-		fid, err := db.getNonMergeFileId(db.options.DirPath)
-		if err != nil {
-			return err
-		}
-		hasMerge, nonMergeFIleId = true, fid
 	}
 
 	updateIndex := func(key []byte, recordType data.LogRecordType, recordPos *data.LogRecordPos) {
@@ -365,11 +343,6 @@ func (db *DB) loadIndexFromDataFile() error {
 	for i, fid := range db.fileIds {
 		var fileId = uint32(fid) // 类型转换
 		var dataFile *data.DataFile
-
-		// 如果 fileId 比 nonMergeFIleId 小，则说明已经从 hintFIle 中加载索引了
-		if hasMerge && fileId < nonMergeFIleId {
-			continue
-		}
 		if fileId == db.activeFile.FileId {
 			dataFile = db.activeFile
 		} else {

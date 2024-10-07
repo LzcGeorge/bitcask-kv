@@ -114,24 +114,3 @@ func GetLogRecordCRC(record *LogRecord, headerWithoutCRC []byte) uint32 {
 	crc = crc32.Update(crc, crc32.IEEETable, record.Value)
 	return crc
 }
-
-// EncodeLogRecordPos 将 LogRecordPos 编码为字节数组, 格式：fid + offset
-func EncodeLogRecordPos(pos *LogRecordPos) []byte {
-	buf := make([]byte, binary.MaxVarintLen32+binary.MaxVarintLen64)
-	var index = 0
-	index += binary.PutVarint(buf[index:], int64(pos.Fid))
-	index += binary.PutVarint(buf[index:], pos.Offset)
-	return buf[:index]
-}
-
-// DecodeLogRecordPos 解码LogRecordPos的字节数组
-func DecodeLogRecordPos(buf []byte) *LogRecordPos {
-	var index = 0
-	fid, n := binary.Varint(buf[index:])
-	index += n
-	offset, _ := binary.Varint(buf[index:])
-	return &LogRecordPos{
-		Fid:    uint32(fid),
-		Offset: offset,
-	}
-}
