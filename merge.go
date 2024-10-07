@@ -175,6 +175,11 @@ func (db *DB) loadMergeFiles() error {
 		if entry.Name() == data.MergeFinishedFileName {
 			mergeFinished = true
 		}
+		// 跳过 seqNo 文件
+		if entry.Name() == data.SeqNoFileName {
+			continue
+		}
+
 		mergeFileNames = append(mergeFileNames, entry.Name())
 	}
 

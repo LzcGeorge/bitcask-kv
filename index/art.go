@@ -61,6 +61,9 @@ func (art *AdaptiveRadixTree) Iterator(reverse bool) Iterator {
 	defer art.lock.RUnlock()
 	return NewARTIterator(art.tree, reverse)
 }
+func (art *AdaptiveRadixTree) Close() error {
+	return nil
+}
 
 // artIterator Art 索引迭代器
 type artIterator struct {

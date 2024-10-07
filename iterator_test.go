@@ -18,6 +18,7 @@ func TestDB_NewIterator(t *testing.T) {
 
 	// 初始化迭代器
 	iter := db.NewIterator(DefaultIteratorOptions)
+	defer iter.Close()
 	assert.NotNil(t, iter)
 	assert.Equal(t, false, iter.Valid())
 
@@ -48,6 +49,7 @@ func TestIterator_Value(t *testing.T) {
 	assert.EqualValues(t, key, iter.Key())
 	iter.Next()
 	assert.Equal(t, false, iter.Valid())
+	iter.Close()
 
 	// 测试 prefix
 	key2 := []byte("abc")
@@ -61,6 +63,7 @@ func TestIterator_Value(t *testing.T) {
 	resValue2, err := iter2.Value()
 	assert.Nil(t, err)
 	assert.EqualValues(t, value2, resValue2)
+	iter2.Close()
 }
 
 func TestIterator_Multi_Value(t *testing.T) {
@@ -92,6 +95,7 @@ func TestIterator_Multi_Value(t *testing.T) {
 		// t.Log("key = ", string(iter.Key()))
 		assert.NotNil(t, iter.Key())
 	}
+	iter.Close()
 
 	// seek 测试
 	iteratorOpts.Prefix = []byte("")
@@ -101,5 +105,5 @@ func TestIterator_Multi_Value(t *testing.T) {
 		// t.Log("key = ", string(iter2.Key()))
 		assert.NotNil(t, iter2.Key())
 	}
-
+	iter2.Close()
 }

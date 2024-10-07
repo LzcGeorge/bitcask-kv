@@ -59,6 +59,9 @@ func (bt *Btree) Iterator(reverse bool) Iterator {
 func (bt *Btree) Size() int {
 	return bt.tree.Len()
 }
+func (bt *Btree) Close() error {
+	return nil
+}
 
 // BTree 索引迭代器
 type btreeIterator struct {

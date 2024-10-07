@@ -12,8 +12,8 @@ type Indexer interface {
 	Get(key []byte) *data.LogRecordPos
 	Delete(key []byte) bool
 	Iterator(reverse bool) Iterator
-	// Size 索引中存在的所有 键值对的数量
-	Size() int
+	Size() int    // Size 索引中存在的所有 键值对的数量
+	Close() error // Close 关闭索引
 }
 
 type IndexType = int8
@@ -24,14 +24,19 @@ const (
 
 	// ART 自适应基数树索引
 	ART
+
+	// BPlusTree 持久化二叉树索引，存储索引到磁盘上
+	BPTree
 )
 
-func NewIndexer(typ IndexType) Indexer {
+func NewIndexer(typ IndexType, dirPath string, sync bool) Indexer {
 	switch typ {
 	case BTree:
 		return NewBtree()
 	case ART:
-		return nil
+		return NewART()
+	case BPTree:
+		return NewBPlusTree(dirPath, sync)
 	default:
 		panic("unsupported index type")
 	}

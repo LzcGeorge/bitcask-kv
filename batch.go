@@ -21,6 +21,9 @@ type WriteBatch struct {
 
 // NewWriteBatch 初始化 WriteBatch
 func (db *DB) NewWriteBatch(opts WriteBatchOptions) *WriteBatch {
+	if db.options.IndexType == BPlusTree && !db.seqNoFileExists && !db.isInitial {
+		panic("cannot use write batch, seqNo file not exists")
+	}
 	return &WriteBatch{
 		options:       opts,
 		lock:          new(sync.Mutex),
