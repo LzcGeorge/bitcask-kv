@@ -40,9 +40,15 @@ func NewDateFile(filePath string, fileId uint32) (*DataFile, error) {
 	}, nil
 }
 
+// GetDataFileName 获取数据文件路径名
+func GetDataFileName(dirPath string, fileId uint32) string {
+	filePath := filepath.Join(dirPath, fmt.Sprintf("%09d", fileId)+DataFileNameSuffix)
+	return filePath
+}
+
 // OpenDateFile 打开数据文件
 func OpenDateFile(dirPath string, fileId uint32) (*DataFile, error) {
-	filePath := filepath.Join(dirPath, fmt.Sprintf("%09d", fileId)+DataFileNameSuffix)
+	filePath := GetDataFileName(dirPath, fileId)
 	return NewDateFile(filePath, fileId)
 }
 
