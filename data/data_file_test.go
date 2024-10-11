@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bitcask-go/fio"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,21 +10,21 @@ const Database_Path = "../Database/datafileTest"
 
 func TestOpenDateFile(t *testing.T) {
 
-	file, err := OpenDateFile(Database_Path, 2)
+	file, err := OpenDateFile(Database_Path, 2, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
-	file2, err := OpenDateFile(Database_Path, 22)
+	file2, err := OpenDateFile(Database_Path, 22, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file2)
 
 	// 重复打开同一个文件
-	file3, err := OpenDateFile(Database_Path, 22)
+	file3, err := OpenDateFile(Database_Path, 22, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file3)
 }
 
 func TestDataFile_Write(t *testing.T) {
-	file, err := OpenDateFile(Database_Path, 9)
+	file, err := OpenDateFile(Database_Path, 9, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
 
@@ -37,7 +38,7 @@ func TestDataFile_Write(t *testing.T) {
 }
 
 func TestDataFile_Close(t *testing.T) {
-	file, err := OpenDateFile(Database_Path, 113)
+	file, err := OpenDateFile(Database_Path, 113, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
 
@@ -49,7 +50,7 @@ func TestDataFile_Close(t *testing.T) {
 }
 
 func TestDataFile_Sync(t *testing.T) {
-	file, err := OpenDateFile(Database_Path, 123)
+	file, err := OpenDateFile(Database_Path, 123, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, file)
 
@@ -61,7 +62,7 @@ func TestDataFile_Sync(t *testing.T) {
 }
 
 func TestDataFile_ReadLogRecord(t *testing.T) {
-	dateFile, err := OpenDateFile(Database_Path, 1)
+	dateFile, err := OpenDateFile(Database_Path, 1, fio.StandardIO)
 	assert.Nil(t, err)
 	assert.NotNil(t, dateFile)
 

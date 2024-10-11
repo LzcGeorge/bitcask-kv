@@ -344,3 +344,44 @@ func TestDB_Sync(t *testing.T) {
 	err = db.Sync()
 	assert.Nil(t, err)
 }
+
+func TestDB_FileLock(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-filelock")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	_, err = Open(opts)
+	assert.Equal(t, ErrDatabaseIsUsing, err)
+
+	db.Close()
+
+	db2, err := Open(opts)
+	assert.Nil(t, err)
+	assert.NotNil(t, db2)
+	err = db2.Close()
+	assert.Nil(t, err)
+
+}
+
+//func TestDB_OpenMMap(t *testing.T) {
+//	opts := DefaultOptions
+//	opts.DirPath = "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database/bitcask-go-writeBach33476478020"
+//	opts.MMapAtStartup = false
+//
+//	now := time.Now()
+//	db, err := Open(opts)
+//	assert.Nil(t, err)
+//	fmt.Println("io reader: ", time.Now().Sub(now))
+//	defer destoryDB(db)
+//
+//	opts.MMapAtStartup = true
+//	now = time.Now()
+//	db2, err := Open(opts)
+//	fmt.Println("mmap reader: ", time.Now().Sub(now))
+//	destoryDB(db2)
+//}

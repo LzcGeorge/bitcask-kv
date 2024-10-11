@@ -27,9 +27,9 @@ type DataFile struct {
 	IOManager   fio.IOManager // IO读写管理器
 }
 
-func NewDateFile(filePath string, fileId uint32) (*DataFile, error) {
+func NewDateFile(filePath string, fileId uint32, ioType fio.FileIOType) (*DataFile, error) {
 	// 初始化 IOManager 管理器接口
-	ioManager, err := fio.NewIOManager(filePath)
+	ioManager, err := fio.NewIOManager(filePath, ioType)
 	if err != nil {
 		return nil, err
 	}
@@ -48,27 +48,27 @@ func GetDataFileName(dirPath string, fileId uint32) string {
 }
 
 // OpenDateFile 打开数据文件
-func OpenDateFile(dirPath string, fileId uint32) (*DataFile, error) {
+func OpenDateFile(dirPath string, fileId uint32, ioType fio.FileIOType) (*DataFile, error) {
 	filePath := GetDataFileName(dirPath, fileId)
-	return NewDateFile(filePath, fileId)
+	return NewDateFile(filePath, fileId, ioType)
 }
 
 // 打开 Hint 索引文件
 func OpenHintFile(dirPath string) (*DataFile, error) {
 	filePath := filepath.Join(dirPath, HintFileName)
-	return NewDateFile(filePath, 0)
+	return NewDateFile(filePath, 0, fio.StandardIO)
 }
 
 // OpenMergeFinishFile 打开 标识merge完成的文件
 func OpenMergeFinishFile(dirPath string) (*DataFile, error) {
 	filePath := filepath.Join(dirPath, MergeFinishedFileName)
-	return NewDateFile(filePath, 0)
+	return NewDateFile(filePath, 0, fio.StandardIO)
 }
 
 // OpenSeqNoFile 打开存储 seqNo 事务序列号的文件
 func OpenSeqNoFile(dirPath string) (*DataFile, error) {
 	filePath := filepath.Join(dirPath, SeqNoFileName)
-	return NewDateFile(filePath, 0)
+	return NewDateFile(filePath, 0, fio.StandardIO)
 }
 
 // Sync 持久化数据文件
@@ -163,4 +163,17 @@ func (df *DataFile) readNBytes(n int64, offset int64) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := df.IOManager.Read(b, offset)
 	return b, err
+}
+
+// SetIOManager 设置 IO 类型
+func (df *DataFile) SetIOManager(dirPath string, ioType fio.FileIOType) error {
+	if err := df.IOManager.Close(); err != nil {
+		return err
+	}
+	ioManager, err := fio.NewIOManager(GetDataFileName(dirPath, df.FileId), ioType)
+	if err != nil {
+		return err
+	}
+	df.IOManager = ioManager
+	return nil
 }

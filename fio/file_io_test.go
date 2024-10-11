@@ -7,13 +7,15 @@ import (
 	"testing"
 )
 
+const DataBasePath = "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database"
+
 func destoryFile(fileName string) {
 	if err := os.RemoveAll(fileName); err != nil {
 		panic(err)
 	}
 }
 func TestNewFileIOManager(t *testing.T) {
-	path := filepath.Join("/Volumes/kioxia/Repo/Distribution/bitcask-go", "a.data")
+	path := filepath.Join(DataBasePath, "a.data")
 	fio, err := NewFileIOManager(path)
 	defer destoryFile(path)
 
@@ -22,7 +24,7 @@ func TestNewFileIOManager(t *testing.T) {
 }
 
 func TestFileIO_Write(t *testing.T) {
-	path := filepath.Join("/Volumes/kioxia/Repo/Distribution/bitcask-go", "a.data")
+	path := filepath.Join(DataBasePath, "a.data")
 	fio, err := NewFileIOManager(path)
 	defer destoryFile(path)
 	assert.Nil(t, err)
@@ -43,7 +45,7 @@ func TestFileIO_Write(t *testing.T) {
 }
 
 func TestFileIO_Read(t *testing.T) {
-	path := filepath.Join("/Volumes/kioxia/Repo/Distribution/bitcask-go", "b.data")
+	path := filepath.Join(DataBasePath, "b.data")
 	fio, err := NewFileIOManager(path)
 	defer destoryFile(path)
 	assert.Nil(t, err)
@@ -71,7 +73,7 @@ func TestFileIO_Read(t *testing.T) {
 }
 
 func TestFileIO_Sync(t *testing.T) {
-	path := filepath.Join("/Volumes/kioxia/Repo/Distribution/bitcask-go", "b.data")
+	path := filepath.Join(DataBasePath, "b.data")
 	fio, err := NewFileIOManager(path)
 	defer destoryFile(path)
 	assert.Nil(t, err)
@@ -82,7 +84,7 @@ func TestFileIO_Sync(t *testing.T) {
 }
 
 func TestFileIO_Close(t *testing.T) {
-	path := filepath.Join("/Volumes/kioxia/Repo/Distribution/bitcask-go", "b.data")
+	path := filepath.Join(DataBasePath, "b.data")
 	fio, err := NewFileIOManager(path)
 	defer destoryFile(path)
 	assert.Nil(t, err)
