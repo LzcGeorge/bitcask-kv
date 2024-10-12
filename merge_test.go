@@ -212,6 +212,7 @@ func TestDB_Merge_With_New_Data(t *testing.T) {
 	db2, err := Open(opts)
 	defer func() {
 		_ = db2.Close()
+		destoryDB(db2)
 	}()
 	assert.Nil(t, err)
 	keys := db2.ListKeys()

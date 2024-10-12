@@ -411,6 +411,35 @@ func TestDB_Stat(t *testing.T) {
 
 }
 
+func TestDB_Backup(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-backup")
+	destDir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-backup-dest")
+	opts.DirPath = dir
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	for i := 0; i < 10000; i++ {
+		err := db.Put(utils.GetTestKey(i), utils.GetRandomValue(1024))
+		assert.Nil(t, err)
+	}
+
+	err = db.Backup(destDir)
+	assert.Nil(t, err)
+	err = db.Close()
+	assert.Nil(t, err)
+
+	opts2 := DefaultOptions
+	opts2.DirPath = destDir
+	db2, err := Open(opts2)
+	defer destoryDB(db2)
+	assert.Nil(t, err)
+	keys := db2.ListKeys()
+	assert.Equal(t, 10000, len(keys))
+}
+
 //func TestDB_OpenMMap(t *testing.T) {
 //	opts := DefaultOptions
 //	opts.DirPath = "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database/bitcask-go-writeBach33476478020"

@@ -141,11 +141,11 @@ func TestWriteBatch3(t *testing.T) {
 
 func TestWriteBatch4(t *testing.T) {
 	opts := DefaultOptions
-	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-writeBach3")
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-writeBach4")
 	opts.DirPath = dir
 	opts.DataFileSize = 64 * 1024 * 1024
 	db, err := Open(opts)
-	//defer destoryDB(db)
+	defer destoryDB(db)
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
 

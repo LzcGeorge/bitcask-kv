@@ -4,6 +4,7 @@ import (
 	"bitcask-go/data"
 	"bitcask-go/fio"
 	"bitcask-go/index"
+	"bitcask-go/utils"
 	"errors"
 	"fmt"
 	"github.com/gofrs/flock"
@@ -154,6 +155,13 @@ func Open(options Options) (*DB, error) {
 	}
 
 	return db, nil
+}
+
+// Backup 备份数据库，将数据文件拷贝到新的目录中
+func (db *DB) Backup(dirPath string) error {
+	db.lock.Lock()
+	defer db.lock.Unlock()
+	return utils.CopyDir(db.options.DirPath, dirPath, []string{fileLockName})
 }
 
 // Put 写入数据
