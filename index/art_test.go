@@ -8,9 +8,9 @@ import (
 
 func TestAdaptiveRadixTree_Put(t *testing.T) {
 	art := NewART()
-	art.Put([]byte("hello"), &data.LogRecordPos{Fid: 1, Offset: 1})
-	art.Put([]byte("hello2"), &data.LogRecordPos{Fid: 2, Offset: 2})
-	art.Put([]byte("hello3"), &data.LogRecordPos{Fid: 3, Offset: 3})
+	res1 := art.Put([]byte("hello"), &data.LogRecordPos{Fid: 1, Offset: 1})
+	assert.Nil(t, res1)
+
 }
 
 func TestAdaptiveRadixTree_Get(t *testing.T) {
@@ -24,21 +24,24 @@ func TestAdaptiveRadixTree_Get(t *testing.T) {
 	assert.Nil(t, pos)
 
 	// 重复的key，改变 pos
-	art.Put([]byte("hello"), &data.LogRecordPos{Fid: 2, Offset: 2})
+	oldValue := art.Put([]byte("hello"), &data.LogRecordPos{Fid: 2, Offset: 2})
+	assert.Equal(t, &data.LogRecordPos{1, 1, 0}, oldValue)
 	pos = art.Get([]byte("hello"))
-	assert.NotNil(t, pos)
+	assert.Equal(t, &data.LogRecordPos{2, 2, 0}, pos)
 }
 
 func TestAdaptiveRadixTree_Delete(t *testing.T) {
 	art := NewART()
 	// 删除不存在的key
-	res1 := art.Delete([]byte("notExist"))
+	oldValue1, res1 := art.Delete([]byte("notExist"))
 	assert.False(t, res1)
+	assert.Nil(t, oldValue1)
 
 	// 删除存在的key
 	art.Put([]byte("hello"), &data.LogRecordPos{Fid: 1, Offset: 1})
-	res2 := art.Delete([]byte("hello"))
+	oldValue2, res2 := art.Delete([]byte("hello"))
 	assert.True(t, res2)
+	assert.Equal(t, &data.LogRecordPos{1, 1, 0}, oldValue2)
 	assert.Nil(t, art.Get([]byte("hello")))
 }
 
@@ -63,7 +66,7 @@ func TestAdaptiveRadixTree_Iterator(t *testing.T) {
 
 	// 2. art 中有一条数据的情况
 	res1 := art.Put([]byte("aa"), &data.LogRecordPos{Fid: 1, Offset: 11})
-	assert.True(t, res1)
+	assert.Nil(t, res1)
 	iter2 := art.Iterator(false)
 	assert.Equal(t, true, iter2.Valid())
 	assert.EqualValues(t, []byte("aa"), iter2.Key())
@@ -93,12 +96,12 @@ func TestAdaptiveRadixTree_Iterator(t *testing.T) {
 	iter4.Seek([]byte("bc"))
 	assert.Equal(t, true, iter4.Valid())
 	assert.EqualValues(t, []byte("cc"), iter4.Key())
-	assert.Equal(t, &data.LogRecordPos{4, 44}, iter4.Value())
+	assert.Equal(t, &data.LogRecordPos{4, 44, 0}, iter4.Value())
 
 	// 5. 测试反向 seek
 	iter5 := art.Iterator(true)
 	iter5.Seek([]byte("cb"))
 	assert.Equal(t, true, iter5.Valid())
 	assert.EqualValues(t, []byte("bb"), iter5.Key())
-	assert.Equal(t, &data.LogRecordPos{2, 22}, iter5.Value())
+	assert.Equal(t, &data.LogRecordPos{2, 22, 0}, iter5.Value())
 }

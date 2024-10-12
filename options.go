@@ -1,12 +1,13 @@
 package bitcask_go
 
 type Options struct {
-	DirPath       string      // 数据库数据目录
-	DataFileSize  int64       // 文件大小
-	SyncWrites    bool        // 写数据是否持久化
-	BytesPerSync  uint        // 累计写到多少字节后进行持久化
-	IndexType     IndexerType // 索引类型
-	MMapAtStartup bool        // 是否在启动时使用 MMap 打开数据文件
+	DirPath            string      // 数据库数据目录
+	DataFileSize       int64       // 文件大小
+	SyncWrites         bool        // 写数据是否持久化
+	BytesPerSync       uint        // 累计写到多少字节后进行持久化
+	IndexType          IndexerType // 索引类型
+	MMapAtStartup      bool        // 是否在启动时使用 MMap 打开数据文件
+	DataFileMergeRatio float32     // 数据文件合并的阈值
 }
 
 // 索引迭代器配置项
@@ -41,12 +42,13 @@ const (
 )
 
 var DefaultOptions = Options{
-	DirPath:       "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database",
-	DataFileSize:  256 * 1024 * 1024, // 256MB
-	SyncWrites:    false,
-	BytesPerSync:  0,
-	IndexType:     BTree,
-	MMapAtStartup: true,
+	DirPath:            "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database",
+	DataFileSize:       256 * 1024 * 1024, // 256MB
+	SyncWrites:         false,
+	BytesPerSync:       0,
+	IndexType:          BTree,
+	MMapAtStartup:      true,
+	DataFileMergeRatio: 0.5,
 }
 
 var DefaultWriteBatchOptions = WriteBatchOptions{

@@ -368,6 +368,49 @@ func TestDB_FileLock(t *testing.T) {
 
 }
 
+func TestDB_Stat(t *testing.T) {
+	opts := DefaultOptions
+	dir, _ := os.MkdirTemp(opts.DirPath, "bitcask-go-stat")
+	opts.DirPath = dir
+	opts.DataFileSize = 64 * 1024 * 1024
+	db, err := Open(opts)
+	defer destoryDB(db)
+	assert.Nil(t, err)
+	assert.NotNil(t, db)
+
+	putSize1, deleteSize1 := 50000, 1000
+	for i := 0; i < putSize1; i++ {
+		err := db.Put(utils.GetTestKey(i), utils.GetRandomValue(1024))
+		assert.Nil(t, err)
+	}
+	stat := db.Stat()
+	assert.Equal(t, uint(putSize1), stat.KeyNum)
+	assert.Equal(t, int64(0), stat.ReclaimableSize)
+	assert.Greater(t, stat.DataFileNum, uint(0))
+	for i := 0; i < deleteSize1; i++ {
+		err := db.Delete(utils.GetTestKey(i))
+		assert.Nil(t, err)
+	}
+	stat = db.Stat()
+	assert.Equal(t, uint(putSize1-deleteSize1), stat.KeyNum)
+
+	putSize2, deleteSize2 := 10, 20
+	for i := deleteSize1; i < deleteSize1+deleteSize2; i++ {
+		err := db.Delete(utils.GetTestKey(i))
+		assert.Nil(t, err)
+	}
+	stat = db.Stat()
+	assert.Equal(t, uint(putSize1-deleteSize1-deleteSize2), stat.KeyNum)
+
+	for i := putSize1; i < putSize1+putSize2; i++ {
+		err := db.Put(utils.GetTestKey(i), utils.GetRandomValue(1024))
+		assert.Nil(t, err)
+	}
+	stat = db.Stat()
+	assert.Equal(t, uint(putSize1-deleteSize1-deleteSize2+putSize2), stat.KeyNum)
+
+}
+
 //func TestDB_OpenMMap(t *testing.T) {
 //	opts := DefaultOptions
 //	opts.DirPath = "/Volumes/kioxia/Repo/Distribution/bitcask-go/bitcask-go/Database/bitcask-go-writeBach33476478020"

@@ -8,9 +8,9 @@ import (
 
 // Indexer 通用索引接口
 type Indexer interface {
-	Put(key []byte, pos *data.LogRecordPos) bool
+	Put(key []byte, pos *data.LogRecordPos) *data.LogRecordPos // 返回被覆盖的旧值（没有的话返回 nil)
 	Get(key []byte) *data.LogRecordPos
-	Delete(key []byte) bool
+	Delete(key []byte) (*data.LogRecordPos, bool) // 返回被删除的旧值,和是否删除成功
 	Iterator(reverse bool) Iterator
 	Size() int    // Size 索引中存在的所有 键值对的数量
 	Close() error // Close 关闭索引

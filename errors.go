@@ -11,4 +11,6 @@ var (
 	ErrBatchTooLarge          = errors.New("batch too large")
 	ErrMergeIsPrecessing      = errors.New("merge is precessing")
 	ErrDatabaseIsUsing        = errors.New("the database directory is using by another process")
+	ErrMergeRatioUnreached    = errors.New("merge ratio unreached")
+	ErrNoEnoughSpaceForMerge  = errors.New("no enough space for merge")
 )

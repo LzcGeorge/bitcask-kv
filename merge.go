@@ -2,6 +2,7 @@ package bitcask_go
 
 import (
 	"bitcask-go/data"
+	"bitcask-go/utils"
 	"io"
 	"os"
 	"path"
@@ -29,6 +30,30 @@ func (db *DB) Merge() error {
 		db.lock.Unlock()
 		return ErrMergeIsPrecessing
 	}
+
+	// 查看可以 merge 的数据量是否达到了阈值
+	totalSize, err := utils.DirSize(db.options.DirPath)
+	if err != nil {
+		db.lock.Unlock()
+		return err
+	}
+	// 没达到阈值，不用合并
+	if float32(db.reclaimSize)/float32(totalSize) < db.options.DataFileMergeRatio {
+		db.lock.Unlock()
+		return ErrMergeRatioUnreached
+	}
+
+	// 查看剩余的空间容量是否可以容纳 merge 之后的数据量
+	availableDiskSize, err := utils.AvailableDiskSize()
+	if err != nil {
+		db.lock.Unlock()
+		return err
+	}
+	if uint64(totalSize-db.reclaimSize) >= availableDiskSize {
+		db.lock.Unlock()
+		return ErrNoEnoughSpaceForMerge
+	}
+
 	db.isMerging = true
 	defer func() {
 		db.isMerging = false
@@ -179,7 +204,10 @@ func (db *DB) loadMergeFiles() error {
 		if entry.Name() == data.SeqNoFileName {
 			continue
 		}
-
+		// 跳过 block 文件
+		if entry.Name() == fileLockName {
+			continue
+		}
 		mergeFileNames = append(mergeFileNames, entry.Name())
 	}
 

@@ -8,11 +8,15 @@ import (
 
 func TestBtree_Put(t *testing.T) {
 	btree := NewBtree()
-	res1 := btree.Put(nil, &data.LogRecordPos{Fid: 1, Offset: 1})
-	assert.True(t, res1)
+	res1 := btree.Put(nil, &data.LogRecordPos{Fid: 1, Offset: 11})
+	assert.Nil(t, res1)
 
-	res2 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 2, Offset: 2})
-	assert.True(t, res2)
+	res2 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 2, Offset: 22})
+	assert.Nil(t, res2)
+
+	// 返回的是旧值
+	res3 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 3, Offset: 33})
+	assert.Equal(t, &data.LogRecordPos{2, 22, 0}, res3)
 }
 
 func TestBtree_Get(t *testing.T) {
@@ -20,7 +24,7 @@ func TestBtree_Get(t *testing.T) {
 
 	// 插入一个key为nil的元素
 	res1 := btree.Put(nil, &data.LogRecordPos{Fid: 20, Offset: 2})
-	assert.True(t, res1)
+	assert.Nil(t, res1)
 
 	pos1 := btree.Get(nil)
 	assert.Equal(t, uint32(20), pos1.Fid)
@@ -28,10 +32,10 @@ func TestBtree_Get(t *testing.T) {
 
 	// 插入一个key为aa的元素
 	res2 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 2, Offset: 2})
-	assert.True(t, res2)
+	assert.Nil(t, res2)
 	// 插入相同的key,修改 地址
 	res3 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 2, Offset: 22})
-	assert.True(t, res3)
+	assert.Equal(t, &data.LogRecordPos{2, 2, 0}, res3)
 
 	pos2 := btree.Get([]byte("aa"))
 	assert.Equal(t, uint32(2), pos2.Fid)
@@ -42,15 +46,22 @@ func TestBtree_Delete(t *testing.T) {
 	btree := NewBtree()
 	// 删除一个 key 为 nil 的元素
 	res1 := btree.Put(nil, &data.LogRecordPos{Fid: 1, Offset: 11})
-	assert.True(t, res1)
-	res2 := btree.Delete(nil)
+	assert.Nil(t, res1)
+	oldValue1, res2 := btree.Delete(nil)
 	assert.True(t, res2)
+	assert.Equal(t, &data.LogRecordPos{1, 11, 0}, oldValue1)
 
 	// 删除一个 key 为 asd 的元素
 	res3 := btree.Put([]byte("asd"), &data.LogRecordPos{Fid: 2, Offset: 201})
-	assert.True(t, res3)
-	res4 := btree.Delete([]byte("asd"))
+	assert.Nil(t, res3)
+	oldValue3, res4 := btree.Delete([]byte("asd"))
 	assert.True(t, res4)
+	assert.Equal(t, &data.LogRecordPos{2, 201, 0}, oldValue3)
+
+	// 删除一个不存在的 key
+	pos, ok := btree.Delete([]byte("not exist key"))
+	assert.Nil(t, pos)
+	assert.False(t, ok)
 }
 
 func TestBtree_Iterator(t *testing.T) {
@@ -62,7 +73,7 @@ func TestBtree_Iterator(t *testing.T) {
 
 	// 2. btree 中有一条数据的情况
 	res1 := btree.Put([]byte("aa"), &data.LogRecordPos{Fid: 1, Offset: 11})
-	assert.True(t, res1)
+	assert.Nil(t, res1)
 	iter2 := btree.Iterator(false)
 	assert.Equal(t, true, iter2.Valid())
 	assert.EqualValues(t, []byte("aa"), iter2.Key())
@@ -92,13 +103,13 @@ func TestBtree_Iterator(t *testing.T) {
 	iter4.Seek([]byte("bc"))
 	assert.Equal(t, true, iter4.Valid())
 	assert.EqualValues(t, []byte("cc"), iter4.Key())
-	assert.Equal(t, &data.LogRecordPos{4, 44}, iter4.Value())
+	assert.Equal(t, &data.LogRecordPos{4, 44, 0}, iter4.Value())
 
 	// 5. 测试反向 seek
 	iter5 := btree.Iterator(true)
 	iter5.Seek([]byte("cb"))
 	assert.Equal(t, true, iter5.Valid())
 	assert.EqualValues(t, []byte("bb"), iter5.Key())
-	assert.Equal(t, &data.LogRecordPos{2, 22}, iter5.Value())
+	assert.Equal(t, &data.LogRecordPos{2, 22, 0}, iter5.Value())
 
 }
