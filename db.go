@@ -57,11 +57,16 @@ func (db *DB) Stat() *Stat {
 		dataFilesNum++
 	}
 
+	dirSize, err := utils.DirSize(db.options.DirPath)
+	if err != nil {
+		panic(fmt.Sprintf("failed to get dir size: %v", err))
+	}
+
 	return &Stat{
 		KeyNum:          uint(db.index.Size()),
 		DataFileNum:     dataFilesNum,
 		ReclaimableSize: db.reclaimSize,
-		DiskSize:        0, // todo
+		DiskSize:        dirSize,
 	}
 }
 
