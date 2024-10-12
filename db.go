@@ -299,7 +299,7 @@ func (db *DB) Close() error {
 		}
 		// 关闭索引
 		if err := db.index.Close(); err != nil {
-			panic(err)
+			panic(fmt.Sprintf("failed to close index,%v", err))
 		}
 	}()
 	if db.activeFile == nil {
@@ -481,12 +481,14 @@ func (db *DB) loadIndexFromDataFile() error {
 
 	updateIndex := func(key []byte, recordType data.LogRecordType, recordPos *data.LogRecordPos) {
 		var oldPos *data.LogRecordPos
-		if recordType == data.LogRecordNormal {
-			oldPos = db.index.Put(key, recordPos)
-		} else if recordType == data.LogRecordDeleted {
+		if recordType == data.LogRecordDeleted {
 			oldPos, _ = db.index.Delete(key)
-			db.reclaimSize += int64(oldPos.Size)
+			db.reclaimSize += int64(recordPos.Size) // 把当前的加入
+		} else {
+			// normal and txn
+			oldPos = db.index.Put(key, recordPos)
 		}
+
 		if oldPos != nil {
 			db.reclaimSize += int64(oldPos.Size)
 		}
@@ -538,8 +540,8 @@ func (db *DB) loadIndexFromDataFile() error {
 				if record.Type == data.LogRecordTxnFinished {
 					for _, txnRecord := range transactionRecords[seqNo] {
 						updateIndex(txnRecord.Record.Key, txnRecord.Record.Type, txnRecord.Pos)
-						delete(transactionRecords, seqNo)
 					}
+					delete(transactionRecords, seqNo)
 				} else {
 					record.Key = realKey
 					transactionRecords[seqNo] = append(transactionRecords[seqNo], &data.TransactionRecord{
